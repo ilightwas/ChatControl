@@ -4,6 +4,7 @@
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
 upsell/
+chatcontrol-bukkit/library
 chatcontrol-bungeecord/library
 chatcontrol-velocity/library
 
@@ -31,6 +32,9 @@ dist/
 
 # JetBrains IDE
 .idea/
+
+# Vscode
+.vscode
 
 # Unit test reports
 TEST*.xml

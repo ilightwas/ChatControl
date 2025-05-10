@@ -43,6 +43,8 @@ import com.gmail.nossr50.datatypes.chat.ChatChannel;
 import com.gmail.nossr50.datatypes.party.Party;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.events.chat.McMMOPartyChatEvent;
+import com.gmail.nossr50.events.skills.BroadcastSkillLevelUpEvent;
+import com.gmail.nossr50.mcmmo.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import com.gmail.nossr50.util.player.UserManager;
 import com.palmergames.bukkit.TownyChat.channels.Channel;
 import com.palmergames.bukkit.TownyChat.events.AsyncChatHookEvent;
@@ -327,6 +329,15 @@ final class McMMOListener implements Listener {
 		}
 
 		return new ArrayList<>();
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onBroadcastLevelUp(final BroadcastSkillLevelUpEvent event) {
+		if (!Settings.Proxy.ENABLED)
+			return;
+		String gson = GsonComponentSerializer.gson().serialize(event.getMessage());
+		SimpleComponent message = SimpleComponent.fromAdventureJson(gson, false);
+		ProxyUtil.sendPluginMessage(ChatControlProxyMessage.BROADCAST, message);
 	}
 }
 
