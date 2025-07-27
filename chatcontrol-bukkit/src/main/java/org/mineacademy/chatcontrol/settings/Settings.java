@@ -466,6 +466,7 @@ public final class Settings extends SimpleSettings {
 
 		public static Boolean ENABLED;
 		public static Boolean PROXY;
+		public static Boolean ALLOW_CROSS_SERVER_TAB_COMPLETE;
 		public static Boolean TOASTS;
 		public static SimpleSound SOUND;
 		public static Boolean AUTOMODE;
@@ -487,6 +488,7 @@ public final class Settings extends SimpleSettings {
 
 			ENABLED = getBoolean("Enabled");
 			PROXY = getBoolean("Proxy");
+			ALLOW_CROSS_SERVER_TAB_COMPLETE = getBoolean("Allow_Cross_Server_Tab_Complete");
 			TOASTS = getBoolean("Toasts");
 			SOUND = get("Sound", SimpleSound.class);
 			AUTOMODE = getBoolean("Auto_Mode");
@@ -1183,18 +1185,20 @@ public final class Settings extends SimpleSettings {
 	 */
 	public static class Performance {
 
-		public static Boolean SUPPORT_GRADIENTS_IN_HOVER;
 		public static Boolean SUPPORT_VARIABLES_IN_VARIABLES;
 		public static Boolean SUPPORT_FULL_PLACEHOLDERAPI_SYNTAX;
+		public static Boolean SUPPORT_RELATIONAL_PLACEHOLDERS;
 		public static Boolean UPGRADE_HEX_TO_MINI_IN_VARIABLES;
+		public static Boolean ASYNC_MOTD;
 
 		private static void init() {
 			setPathPrefix("Performance");
 
-			SUPPORT_GRADIENTS_IN_HOVER = getBoolean("Support_Gradients_In_Hover");
 			SUPPORT_VARIABLES_IN_VARIABLES = getBoolean("Support_Variables_In_Variables");
 			SUPPORT_FULL_PLACEHOLDERAPI_SYNTAX = getBoolean("Support_Full_PlaceholderAPI_Syntax");
+			SUPPORT_RELATIONAL_PLACEHOLDERS = getBoolean("Support_Relational_Placeholders");
 			UPGRADE_HEX_TO_MINI_IN_VARIABLES = getBoolean("Upgrade_Hex_To_Mini_In_Variables");
+			ASYNC_MOTD = getBoolean("Async_Motd");
 
 			Variables.setDoubleParse(SUPPORT_VARIABLES_IN_VARIABLES);
 			Variables.setConvertHexToMini(UPGRADE_HEX_TO_MINI_IN_VARIABLES);

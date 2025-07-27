@@ -10,10 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
 import org.mineacademy.chatcontrol.model.Packets.RemoveMode;
-import org.mineacademy.chatcontrol.settings.Settings;
 import org.mineacademy.fo.ChatUtil;
 import org.mineacademy.fo.Common;
 import org.mineacademy.fo.CommonCore;
@@ -133,41 +131,44 @@ public final class Format extends YamlConfig {
 	 * Compile the format for the given message and his message, and insert given variables
 	 *
 	 * @param sender
-	 * @param placeholders
+	 * @param placeholder
 	 * @return
 	 */
-	public SimpleComponent build(final WrappedSender sender, @NonNull final Map<String, Object> placeholders) {
+	public SimpleComponent build(final WrappedSender sender, @NonNull final Map<String, Object> placeholder) {
 		SimpleComponent component = SimpleComponent.empty();
 		UUID messageId;
 		int index = 0;
 
-		if (!placeholders.containsKey("sender")) {
-			placeholders.put("sender", sender == null ? "" : sender.getName());
-			placeholders.put("sender_name", sender == null ? "" : sender.getName());
+		final Map<String, Object> placeholdersCopy = new HashMap<>(placeholder);
+
+		if (!placeholdersCopy.containsKey("sender")) {
+			placeholdersCopy.put("sender", sender == null ? "" : sender.getName());
+			placeholdersCopy.put("sender_name", sender == null ? "" : sender.getName());
 		}
 
 		if (sender != null && sender.isPlayer())
 			for (final Map.Entry<String, Object> data : sender.getPlayerCache().getRuleData().entrySet())
-				placeholders.put("data_" + data.getKey(), SerializeUtilCore.serialize(Language.YAML, data.getValue()).toString());
+				placeholdersCopy.put("data_" + data.getKey(), SerializeUtilCore.serialize(Language.YAML, data.getValue()).toString());
 
-		if (!placeholders.containsKey("message_uuid")) {
+		if (!placeholdersCopy.containsKey("message_uuid")) {
 			messageId = UUID.randomUUID();
 
-			placeholders.put("message_uuid", messageId.toString());
+			placeholdersCopy.put("message_uuid", messageId.toString());
 
 		} else {
-			final Object obj = placeholders.get("message_uuid");
+			final Object obj = placeholdersCopy.get("message_uuid");
 
 			messageId = obj instanceof UUID ? (UUID) obj : UUID.fromString(obj.toString());
 		}
 
-		final Variables variables = Variables.builder(sender != null ? sender.getAudience() : null).cache(true).placeholders(placeholders);
+		final Variables variables = Variables.builder(sender != null ? sender.getAudience() : null).cache(true).placeholders(placeholdersCopy);
 
 		for (final Part part : this.parts) {
 			SimpleComponent partComponent = null;
 
 			try {
 				partComponent = part.build(sender, variables);
+
 			} catch (final FoScriptException ex) {
 				ex.printStackTrace();
 			}
@@ -348,9 +349,9 @@ public final class Format extends YamlConfig {
 		public SimpleComponent build(final WrappedSender sender, final Variables variables) {
 
 			// Ugly hack for channel name to avoid having to parse variables in variables, we just hardcode support for this one
-			final String channelName = (String) variables.placeholders().getOrDefault("channel", "");
+			final String channelName = (String) variables.placeholdersReadOnly().getOrDefault("channel", "");
 
-			Object messageVariable = variables.placeholders().remove("message");
+			Object messageVariable = variables.removePlaceholder("message");
 
 			// Replace ItemsAdder inside the {message} placeholder
 			if (messageVariable != null && sender != null) {
@@ -506,7 +507,9 @@ public final class Format extends YamlConfig {
 					final String text = message.substring(to + 1, end);
 
 					parts.add(beforeGradient + gradient + variables.replaceLegacy(text));
-					start = end + "</gradient>".length();
+
+					// Commented due to causing issues with gradients
+					start = end/* + "</gradient>".length()*/;
 				}
 
 				parts.add(message.substring(start));
@@ -540,17 +543,11 @@ public final class Format extends YamlConfig {
 						.replace("{sender}", sender == null ? "" : sender.getName())
 						.replace("{sender_name}", sender == null ? "" : sender.getName())));
 
-			final boolean gradientSupport = Settings.Performance.SUPPORT_GRADIENTS_IN_HOVER;
-
-			variables.toLegacyMode(gradientSupport ? ToLegacyMode.MINI : ToLegacyMode.LEGACY);
+			variables.toLegacyMode(ToLegacyMode.MINI);
 
 			if (this.hoverText != null && !this.hoverText.isEmpty()) {
 				String replacedHoverText = "<gray>" + variables.replaceLegacy(this.hoverText);
-
-				if (gradientSupport)
-					replacedHoverText = CompChatColor.convertLegacyToMini(replacedHoverText, true);
-				else
-					replacedHoverText = CompChatColor.convertMiniToLegacy(ChatColor.translateAlternateColorCodes('&', replacedHoverText));
+				replacedHoverText = CompChatColor.convertLegacyToMini(replacedHoverText, true);
 
 				final String[] lines = replacedHoverText.split("\n");
 
@@ -568,10 +565,7 @@ public final class Format extends YamlConfig {
 						// Really old, and using CraftBukkit
 					}
 
-					if (gradientSupport)
-						joined = joined.append(SimpleComponent.deserializeMiniToAdventure(line));
-					else
-						joined = joined.append(Component.text(line));
+					joined = joined.append(SimpleComponent.deserializeMiniToAdventure(line));
 
 					if (i < lines.length - 1)
 						joined = joined.append(Component.newline());

@@ -95,7 +95,13 @@ public final class CommandTell extends ChatControlCommand {
 			return;
 		}
 
-		this.checkNotNull(syncedReceiverCache, Lang.component("command-tell-receiver-offline", "receiver_name", this.args[0]));
+		this.checkBoolean(
+				syncedReceiverCache != null // Original offline player check, reversed to match new verification method
+				// Prevents cross-server PMs when disabled. Previously, the message wasn't delivered,
+				// but the sender still saw it as if it was — this fixes that inconsistency.
+				&& (Settings.PrivateMessages.PROXY || syncedReceiverCache.getServerName().equals(syncedSenderCache.getServerName())),
+				Lang.component("command-tell-receiver-offline", "receiver_name", this.args[0])
+		);
 
 		PrivateMessage.send(wrapped, syncedReceiverCache, message);
 	}
@@ -105,6 +111,6 @@ public final class CommandTell extends ChatControlCommand {
 	 */
 	@Override
 	protected List<String> tabComplete() {
-		return this.args.length == 1 ? this.completeLastWordPlayerNames() : NO_COMPLETE;
+		return this.args.length == 1 ? this.completeLastWordPlayerNames(Settings.PrivateMessages.ALLOW_CROSS_SERVER_TAB_COMPLETE) : NO_COMPLETE;
 	}
 }

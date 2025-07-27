@@ -561,7 +561,7 @@ public final class Channel extends YamlConfig implements ConfigStringSerializabl
 			throw new EventHandledException(true, SimpleComponent.fromAmpersand("&cChannel " + this.name + " is using non-existing formatting '" + this.format + "&c'. Please contact administrator."));
 
 		// Build the component we send -- send the changed message from sound notify
-		SimpleComponent formattedComponent = format.build(sender, state.getVariables().placeholders());
+		SimpleComponent formattedComponent = format.build(sender, state.getVariables().placeholdersReadOnly());
 
 		// Build log
 		String consoleFormat = this.consoleFormat != null ? this.consoleFormat : Settings.Channels.FORMAT_CONSOLE;
@@ -595,11 +595,17 @@ public final class Channel extends YamlConfig implements ConfigStringSerializabl
 		// Send to players or the sender himself only if silently canceled
 		if (check.isCancelledSilently()) {
 			if (!formattedComponent.toPlain(sender.getAudience()).trim().isEmpty()) {
-				sender.getAudience().sendMessage(HookManager.replaceRelationPlaceholders(sender.getAudience(), sender.getAudience(), formattedComponent));
+
+				if (sender.isPlayer() && Settings.Performance.SUPPORT_RELATIONAL_PLACEHOLDERS)
+					sender.getAudience().sendMessage(
+							SimpleComponent.fromMiniSection(
+									HookManager.replaceRelationPlaceholders(sender.getPlayer(), sender.getPlayer(), formattedComponent.toMini())));
+				else
+					sender.getAudience().sendMessage(formattedComponent);
 
 				Platform.runTaskAsync(() -> {
 					if (!check.isSpyingIgnored())
-						Spy.broadcastChannel(this, sender, chatComponent, Arrays.asList(sender.getUniqueId()), state.getVariables().placeholders(), check.isCancelledSilently());
+						Spy.broadcastChannel(this, sender, chatComponent, Arrays.asList(sender.getUniqueId()), state.getVariables().placeholdersReadOnly(), check.isCancelledSilently());
 
 					if (!check.isLoggingIgnored())
 						Log.logChannel(sender.getSender(), this, Lang.plain("command-spy-deny-silently") + chatMessageAsLegacy);
@@ -616,10 +622,15 @@ public final class Channel extends YamlConfig implements ConfigStringSerializabl
 
 			for (final Player receiver : receivers) {
 				final FoundationPlayer receiverAudience = Platform.toPlayer(receiver);
-				final SimpleComponent replaced = HookManager.replaceRelationPlaceholders(sender.getAudience(), receiverAudience, formattedComponent);
 
-				if (!replaced.toPlain(receiverAudience).trim().isEmpty()) {
-					receiverAudience.sendMessage(replaced);
+				if (!sender.isPlayer() || !Settings.Performance.SUPPORT_RELATIONAL_PLACEHOLDERS) {
+					receiverAudience.sendMessage(formattedComponent);
+
+					atLeastOneSuccessfulSent = true;
+				} else if(!formattedComponent.isEmpty(receiverAudience)) {
+					final String replacedMini = HookManager.replaceRelationPlaceholders(sender.getPlayer(), receiver, formattedComponent.toMini(receiverAudience));
+
+					receiverAudience.sendMessage(SimpleComponent.fromMiniSection(replacedMini));
 
 					atLeastOneSuccessfulSent = true;
 				}
@@ -636,7 +647,7 @@ public final class Channel extends YamlConfig implements ConfigStringSerializabl
 								this.sound.play(receiver);
 
 					if (!check.isSpyingIgnored())
-						Spy.broadcastChannel(this, sender, chatComponent, CommonCore.convertList(receivers, Player::getUniqueId), state.getVariables().placeholders(), check.isCancelledSilently());
+						Spy.broadcastChannel(this, sender, chatComponent, CommonCore.convertList(receivers, Player::getUniqueId), state.getVariables().placeholdersReadOnly(), check.isCancelledSilently());
 
 					if (!check.isLoggingIgnored())
 						Log.logChannel(sender.getSender(), this, chatMessageAsLegacy);

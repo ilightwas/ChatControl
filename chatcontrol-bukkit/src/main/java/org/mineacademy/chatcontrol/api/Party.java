@@ -37,6 +37,36 @@ public abstract class Party {
 	};
 
 	/**
+	 * This is a channel shown only to players in the Factions allied to the sender's.
+	 */
+	public static final Party FACTION_ALLY = new Party("factions-ally") {
+		@Override
+		public boolean isInParty(Player receiver, Player sender) {
+			return HookManager.getOnlineFactionPlayers(sender).contains(receiver) || HookManager.getRelatedFactionPlayers(sender, "ALLY").contains(receiver);
+		}
+	};
+
+	/**
+	 * This is a channel shown only to players in the Factions enemy to the sender's.
+	 */
+	public static final Party FACTION_ENEMY = new Party("factions-enemy") {
+		@Override
+		public boolean isInParty(Player receiver, Player sender) {
+			return HookManager.getOnlineFactionPlayers(sender).contains(receiver) || HookManager.getRelatedFactionPlayers(sender, "ENEMY").contains(receiver);
+		}
+	};
+
+	/**
+	 * This is a channel shown only to players in the Factions in truce with the sender's.
+	 */
+	public static final Party FACTION_TRUCE = new Party("factions-truce") {
+		@Override
+		public boolean isInParty(Player receiver, Player sender) {
+			return HookManager.getOnlineFactionPlayers(sender).contains(receiver) || HookManager.getRelatedFactionPlayers(sender, "TRUCE").contains(receiver);
+		}
+	};
+
+	/**
 	 * Chat for PlotSquared - only shown to players inside the plot.
 	 */
 	public static final Party PLOT = new Party("plotsquared-plot") {
